@@ -31,4 +31,9 @@ func InitializeRoute(r *mux.Router) {
 	r.HandleFunc("/category/{id}", auth.MiddlewareAuth(admin.UpdateCategory)).Methods("POST")
 	r.HandleFunc("/category/{id}", auth.MiddlewareAuth(admin.DeleteCategory)).Methods("DELETE")
 
+	r.HandleFunc("/question", auth.MiddlewareAuth(admin.GetQuestions)).Methods("GET")
+	r.HandleFunc("/question/{id}", auth.MiddlewareAuth(admin.GetQuestion)).Methods("GET")
+	r.HandleFunc("/question", auth.MiddlewareAuth(admin.AddQuestion)).Methods("POST")
+	r.HandleFunc("/question/{id}", auth.MiddlewareAuth(admin.UpdateQuestion)).Methods("POST")
+	r.HandleFunc("/question/{id}", auth.MiddlewareAuth(admin.DeleteQuestion)).Methods("DELETE")
 }
