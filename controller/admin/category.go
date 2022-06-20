@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -43,10 +44,10 @@ func GetCategories(w http.ResponseWriter, r *http.Request) {
 		categories = append(categories, category)
 	}
 
-	peopleBytes, _ := json.MarshalIndent(categories, "", "\t")
+	data, _ := json.MarshalIndent(categories, "", "\t")
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(peopleBytes)
+	w.Write(data)
 
 	defer rows.Close()
 }
@@ -69,6 +70,18 @@ func GetCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cekIdCategory := controller.GetMaterialID(int(id), "category")
+	if cekIdCategory == 0 {
+		res := response.BaseResponse{
+			Status:  http.StatusNotFound,
+			Message: "Category Not Found!",
+		}
+		data, _ := json.MarshalIndent(res, "", "\t")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(data)
+		return
+	}
+
 	var category model.Category
 
 	err = controller.DB.QueryRow("SELECT * FROM category WHERE id = $1", id).
@@ -79,10 +92,10 @@ func GetCategory(w http.ResponseWriter, r *http.Request) {
 		fmt.Print(err)
 	}
 
-	peopleBytes, _ := json.MarshalIndent(category, "", "\t")
+	data, _ := json.MarshalIndent(category, "", "\t")
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(peopleBytes)
+	w.Write(data)
 
 }
 
@@ -122,9 +135,9 @@ func AddCategory(w http.ResponseWriter, r *http.Request) {
 			Message: "Category Created!",
 		},
 	}
-	peopleBytes, _ := json.MarshalIndent(data, "", "\t")
+	dataCategory, _ := json.MarshalIndent(data, "", "\t")
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(peopleBytes)
+	w.Write(dataCategory)
 
 }
 
@@ -152,6 +165,18 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
+	cekIdCategory := controller.GetMaterialID(int(id), "category")
+	if cekIdCategory == 0 {
+		res := response.BaseResponse{
+			Status:  http.StatusNotFound,
+			Message: "Category Not Found!",
+		}
+		data, _ := json.MarshalIndent(res, "", "\t")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(data)
+		return
+	}
+
 	adminName := controller.GetAdminName(int(tokenID))
 
 	sqlStatement := `UPDATE category SET value = $1, min_score = $2, duration = $3, limit_question = $4, updated_at = $5, updated_by = $6 WHERE id = $7`
@@ -170,13 +195,14 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 			Message: "Category Updated!",
 		},
 	}
-	peopleBytes, _ := json.MarshalIndent(data, "", "\t")
+	dataCategory, _ := json.MarshalIndent(data, "", "\t")
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(peopleBytes)
+	w.Write(dataCategory)
 
 }
 
 func DeleteCategory(w http.ResponseWriter, r *http.Request) {
+	var category model.Category
 	vars := mux.Vars(r)
 	id, err := strconv.ParseUint(vars["id"], 10, 32)
 	if err != nil {
@@ -194,8 +220,37 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cekIdCategory := controller.GetMaterialID(int(id), "category")
+	if cekIdCategory == 0 {
+		res := response.BaseResponse{
+			Status:  http.StatusNotFound,
+			Message: "Category Not Found!",
+		}
+		data, _ := json.MarshalIndent(res, "", "\t")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(data)
+		return
+	}
+
+	CekCategoryInQuestion := controller.CekMaterialInOtherRelation(int(id), "category_id", "question")
+	if CekCategoryInQuestion == int(id) {
+		res := response.BaseResponse{
+			Status:  http.StatusBadRequest,
+			Message: "Category Used In Question!",
+		}
+		data, _ := json.MarshalIndent(res, "", "\t")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(data)
+		return
+	}
 	sqlStatement := `DELETE FROM category WHERE id = $1`
 	_, err = controller.DB.Exec(sqlStatement, id)
+	row := controller.DB.QueryRow(sqlStatement, id)
+	switch err := row.Scan(&category.ID); err {
+	case sql.ErrNoRows:
+		fmt.Println("No rows were returned!")
+	}
+
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		panic(err)
@@ -204,8 +259,7 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 		Status:  http.StatusOK,
 		Message: "Category Deleted!",
 	}
-	peopleBytes, _ := json.MarshalIndent(res, "", "\t")
+	data, _ := json.MarshalIndent(res, "", "\t")
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(peopleBytes)
-
+	w.Write(data)
 }
