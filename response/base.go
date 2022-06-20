@@ -11,6 +11,10 @@ type BaseResponse struct {
 	Message string `json:"message"`
 }
 
+type IdResponse struct {
+	ID int `json:"id"`
+}
+
 func JSON(w http.ResponseWriter, statusCode int, data interface{}) {
 	w.WriteHeader(statusCode)
 	err := json.NewEncoder(w).Encode(data)
