@@ -1,12 +1,12 @@
 package auth
 
 import (
-	"encoding/json"
+	"errors"
 	"fmt"
-	"log"
 	"main/response"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -16,8 +16,8 @@ import (
 func CreateToken(id int) (response.Token, error) {
 	claims := jwt.MapClaims{}
 	claims["authorized"] = true
-	claims["id"] = id
-	claims["exp"] = time.Now().Add(time.Minute * 1).Unix() //Token expires after 1 minute
+	claims["user_id"] = id
+	claims["exp"] = time.Now().Add(time.Hour * 1).Unix() //Token expires after 1 hour
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tok, _ := token.SignedString([]byte(os.Getenv("API_SECRET")))
 	return response.Token{
@@ -37,8 +37,8 @@ func TokenValid(r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		Pretty(claims)
+	if _, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		return nil
 	}
 	return nil
 }
@@ -56,12 +56,36 @@ func ExtractToken(r *http.Request) string {
 	return ""
 }
 
-//Pretty display the claims licely in the terminal
-func Pretty(data interface{}) {
-	b, err := json.MarshalIndent(data, "", " ")
+func ExtractTokenID(r *http.Request) (uint32, error) {
+
+	tokenString := ExtractToken(r)
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(os.Getenv("API_SECRET")), nil
+	})
 	if err != nil {
-		log.Println(err)
-		return
+		return 0, err
 	}
-	fmt.Println(string(b))
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if ok && token.Valid {
+		id, err := strconv.ParseUint(fmt.Sprintf("%.0f", claims["user_id"]), 10, 32)
+		if err != nil {
+			return 0, err
+		}
+		return uint32(id), nil
+	}
+	return 0, nil
+}
+
+func MiddlewareAuth(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		err := TokenValid(r)
+		if err != nil {
+			response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
+			return
+		}
+		next(w, r)
+	}
 }

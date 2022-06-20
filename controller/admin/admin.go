@@ -2,6 +2,7 @@ package admin
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -11,6 +12,7 @@ import (
 	"main/response"
 	"main/utils"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -18,7 +20,7 @@ import (
 
 func GetAdmins(w http.ResponseWriter, r *http.Request) {
 
-	rows, err := controller.DB.Query("SELECT id, name, email FROM user_admin ORDER BY id asc")
+	rows, err := controller.DB.Query("SELECT id, name, email FROM admin ORDER BY id asc")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -42,14 +44,25 @@ func GetAdmins(w http.ResponseWriter, r *http.Request) {
 
 func GetAdmin(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id, ok := vars["id"]
-	if !ok {
-		fmt.Println("id is missing in parameters")
+	id, err := strconv.ParseUint(vars["id"], 10, 32)
+	if err != nil {
+		response.ERROR(w, http.StatusBadRequest, err)
+		return
+	}
+
+	tokenID, err := auth.ExtractTokenID(r)
+	if err != nil {
+		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
+		return
+	}
+	if tokenID != uint32(id) {
+		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
+		return
 	}
 
 	var admin response.AdminListResponse
 
-	err := controller.DB.QueryRow("SELECT id, name, email FROM user_admin WHERE id = $1", id).Scan(&admin.Id, &admin.Name, &admin.Email)
+	err = controller.DB.QueryRow("SELECT id, name, email FROM admin WHERE id = $1", id).Scan(&admin.Id, &admin.Name, &admin.Email)
 	if err != nil {
 		fmt.Print(err)
 	}
@@ -62,13 +75,13 @@ func GetAdmin(w http.ResponseWriter, r *http.Request) {
 }
 
 func AddAdmin(w http.ResponseWriter, r *http.Request) {
-	var admin model.UserAdmin
+	var admin model.Admin
 	err := json.NewDecoder(r.Body).Decode(&admin)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
-	sqlCekUser := controller.SqlQueryCek("user_admin")
+	sqlCekUser := controller.SqlQueryCek("admin")
 	exist := controller.CekUser(admin.Email, sqlCekUser)
 
 	if exist.Email != "" {
@@ -87,7 +100,7 @@ func AddAdmin(w http.ResponseWriter, r *http.Request) {
 
 	} else {
 
-		sqlStatement := `INSERT INTO user_admin (name, email, password, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)`
+		sqlStatement := `INSERT INTO admin (name, email, password, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)`
 		_, err = controller.DB.Exec(sqlStatement, admin.Name, admin.Email, utils.HashAndSalt([]byte(admin.Password)), time.Now(), time.Now())
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -111,18 +124,29 @@ func AddAdmin(w http.ResponseWriter, r *http.Request) {
 
 func UpdateAdmin(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id, ok := vars["id"]
-	if !ok {
-		fmt.Println("id is missing in parameters")
+	id, err := strconv.ParseUint(vars["id"], 10, 32)
+	if err != nil {
+		response.ERROR(w, http.StatusBadRequest, err)
+		return
 	}
 
-	var admin model.UserAdmin
-	err := json.NewDecoder(r.Body).Decode(&admin)
+	tokenID, err := auth.ExtractTokenID(r)
+	if err != nil {
+		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
+		return
+	}
+	if tokenID != uint32(id) {
+		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
+		return
+	}
+
+	var admin model.Admin
+	err = json.NewDecoder(r.Body).Decode(&admin)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
-	sqlCekUser := controller.SqlQueryCek("user_admin")
+	sqlCekUser := controller.SqlQueryCek("admin")
 	exist := controller.CekUser(admin.Email, sqlCekUser)
 
 	if exist.Email != "" {
@@ -141,7 +165,7 @@ func UpdateAdmin(w http.ResponseWriter, r *http.Request) {
 
 	} else {
 
-		sqlStatement := `UPDATE user_admin SET name = $1, email = $2, password = $3, updated_at = $4 WHERE id = $5`
+		sqlStatement := `UPDATE admin SET name = $1, email = $2, password = $3, updated_at = $4 WHERE id = $5`
 		_, err = controller.DB.Exec(sqlStatement, admin.Name, admin.Email, utils.HashAndSalt([]byte(admin.Password)), time.Now(), id)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -164,13 +188,24 @@ func UpdateAdmin(w http.ResponseWriter, r *http.Request) {
 
 func DeleteAdmin(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id, ok := vars["id"]
-	if !ok {
-		fmt.Println("id is missing in parameters")
+	id, err := strconv.ParseUint(vars["id"], 10, 32)
+	if err != nil {
+		response.ERROR(w, http.StatusBadRequest, err)
+		return
 	}
 
-	sqlStatement := `DELETE FROM user_admin WHERE id = $1`
-	_, err := controller.DB.Exec(sqlStatement, id)
+	tokenID, err := auth.ExtractTokenID(r)
+	if err != nil {
+		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
+		return
+	}
+	if tokenID != uint32(id) {
+		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
+		return
+	}
+
+	sqlStatement := `DELETE FROM admin WHERE id = $1`
+	_, err = controller.DB.Exec(sqlStatement, id)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		panic(err)
@@ -186,7 +221,7 @@ func DeleteAdmin(w http.ResponseWriter, r *http.Request) {
 }
 
 func LoginAdmin(w http.ResponseWriter, r *http.Request) {
-	admin := model.UserAdmin{}
+	admin := model.Admin{}
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		response.ERROR(w, http.StatusUnprocessableEntity, err)
@@ -198,9 +233,11 @@ func LoginAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sqlQuery := `SELECT name, email FROM user_admin WHERE email = $1`
+	sqlQuery := controller.SqlQueryCek("admin")
+	sqlGetID := controller.SqlGetID("admin")
+	id := controller.GetUserID(admin.Email, sqlGetID)
 
-	token, err := auth.SignIn(admin.Email, admin.Password, sqlQuery)
+	token, err := controller.SignIn(admin.Email, admin.Password, sqlQuery, id)
 	if err != nil {
 		formattedError := utils.FormatError(err.Error())
 		response.ERROR(w, http.StatusUnprocessableEntity, formattedError)

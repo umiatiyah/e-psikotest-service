@@ -1,6 +1,6 @@
 package model
 
-type UserAdmin struct {
+type Admin struct {
 	ID        int    `json:"id"`
 	Name      string `json:"name"`
 	Email     string `json:"email"`
