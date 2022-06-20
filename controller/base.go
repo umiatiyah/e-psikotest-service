@@ -85,3 +85,31 @@ func GetAdminName(id int) string {
 
 	return admin.Name
 }
+
+func GetMaterialID(id int, tbl string) int {
+
+	var idMaterial response.IdResponse
+	sqlQuery := `SELECT id FROM ` + tbl + ` WHERE id = $1`
+
+	row := DB.QueryRow(sqlQuery, id)
+	switch err := row.Scan(&idMaterial.ID); err {
+	case sql.ErrNoRows:
+		fmt.Println("No rows were returned!")
+	}
+
+	return idMaterial.ID
+}
+
+func CekMaterialInOtherRelation(id int, column, tbl string) int {
+
+	var idMaterial response.IdResponse
+	sqlQuery := `SELECT ` + column + ` FROM ` + tbl + ` WHERE id in ($1)`
+
+	row := DB.QueryRow(sqlQuery, id)
+	switch err := row.Scan(&idMaterial.ID); err {
+	case sql.ErrNoRows:
+		fmt.Println("No rows were returned!")
+	}
+
+	return idMaterial.ID
+}
