@@ -103,7 +103,7 @@ func GetMaterialID(id int, tbl string) int {
 func CekMaterialInOtherRelation(id int, column, tbl string) int {
 
 	var idMaterial response.IdResponse
-	sqlQuery := `SELECT ` + column + ` FROM ` + tbl + ` WHERE id in ($1)`
+	sqlQuery := `SELECT ` + column + ` FROM ` + tbl + ` WHERE ` + column + ` = $1`
 
 	row := DB.QueryRow(sqlQuery, id)
 	switch err := row.Scan(&idMaterial.ID); err {
