@@ -10,6 +10,7 @@ import (
 	"main/controller/auth"
 	"main/model"
 	"main/response"
+	"main/utils"
 	"net/http"
 	"strconv"
 	"time"
@@ -245,7 +246,7 @@ func DeleteQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cekIdQuestion := controller.GetMaterialID(int(id), "question")
+	cekIdQuestion := controller.GetMaterialID(int(id), utils.Qst)
 	if cekIdQuestion == 0 {
 		res := response.BaseResponse{
 			Status:  http.StatusNotFound,

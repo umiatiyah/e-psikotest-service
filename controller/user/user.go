@@ -91,7 +91,7 @@ func AddUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sqlCekUser := controller.SqlQueryCek("users")
+	sqlCekUser := controller.SqlQueryCek(utils.Usr)
 	exist := controller.CekUser(user.Email, sqlCekUser)
 
 	if exist.Email != "" {
@@ -158,7 +158,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
-	sqlCekUser := controller.SqlQueryCek("users")
+	sqlCekUser := controller.SqlQueryCek(utils.Usr)
 	exist := controller.CekUser(user.Email, sqlCekUser)
 
 	if exist.Email != "" {
@@ -246,11 +246,11 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sqlQuery := controller.SqlQueryCek("users")
-	sqlGetID := controller.SqlGetID("users")
+	sqlQuery := controller.SqlQueryCek(utils.Usr)
+	sqlGetID := controller.SqlGetID(utils.Usr)
 	id := controller.GetUserID(user.Email, sqlGetID)
 
-	token, err := controller.SignIn(user.Email, user.Password, sqlQuery, "user", id)
+	token, err := controller.SignIn(user.Email, user.Password, sqlQuery, utils.Usr, id)
 	if err != nil {
 		formattedError := utils.FormatError(err.Error())
 		response.ERROR(w, http.StatusUnprocessableEntity, formattedError)

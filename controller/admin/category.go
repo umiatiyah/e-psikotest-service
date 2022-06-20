@@ -10,6 +10,7 @@ import (
 	"main/controller/auth"
 	"main/model"
 	"main/response"
+	"main/utils"
 	"net/http"
 	"strconv"
 	"time"
@@ -70,7 +71,7 @@ func GetCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cekIdCategory := controller.GetMaterialID(int(id), "category")
+	cekIdCategory := controller.GetMaterialID(int(id), utils.Ctg)
 	if cekIdCategory == 0 {
 		res := response.BaseResponse{
 			Status:  http.StatusNotFound,
@@ -165,7 +166,7 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
-	cekIdCategory := controller.GetMaterialID(int(id), "category")
+	cekIdCategory := controller.GetMaterialID(int(id), utils.Ctg)
 	if cekIdCategory == 0 {
 		res := response.BaseResponse{
 			Status:  http.StatusNotFound,
@@ -220,7 +221,7 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cekIdCategory := controller.GetMaterialID(int(id), "category")
+	cekIdCategory := controller.GetMaterialID(int(id), utils.Ctg)
 	if cekIdCategory == 0 {
 		res := response.BaseResponse{
 			Status:  http.StatusNotFound,
