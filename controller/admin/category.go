@@ -30,7 +30,7 @@ func GetCategories(w http.ResponseWriter, r *http.Request) {
 		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
-	if role != "admin" {
+	if role != utils.Adm {
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
@@ -66,7 +66,7 @@ func GetCategory(w http.ResponseWriter, r *http.Request) {
 		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
-	if role != "admin" {
+	if role != utils.Adm {
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
@@ -112,7 +112,7 @@ func AddCategory(w http.ResponseWriter, r *http.Request) {
 		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
-	if role != "admin" {
+	if role != utils.Adm {
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
@@ -155,7 +155,7 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
-	if tokenID != uint32(id) && role != "admin" {
+	if tokenID != uint32(id) && role != utils.Adm {
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
@@ -216,7 +216,7 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
-	if tokenID != uint32(id) && role != "admin" {
+	if tokenID != uint32(id) && role != utils.Adm {
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
@@ -233,7 +233,7 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	CekCategoryInQuestion := controller.CekMaterialInOtherRelation(int(id), "category_id", "question")
+	CekCategoryInQuestion := controller.CekMaterialInOtherRelation(int(id), "category_id", utils.Qst)
 	if CekCategoryInQuestion == int(id) {
 		res := response.BaseResponse{
 			Status:  http.StatusBadRequest,

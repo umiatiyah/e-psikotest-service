@@ -30,7 +30,7 @@ func GetQuestions(w http.ResponseWriter, r *http.Request) {
 		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
-	if role != "admin" {
+	if role != utils.Adm {
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
@@ -65,16 +65,16 @@ func GetQuestion(w http.ResponseWriter, r *http.Request) {
 		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
-	if role != "admin" {
+	if role != utils.Adm {
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
 
-	cekIdCategory := controller.GetMaterialID(int(id), "category")
-	if cekIdCategory == 0 {
+	cekIdQuestion := controller.GetMaterialID(int(id), utils.Qst)
+	if cekIdQuestion == 0 {
 		res := response.BaseResponse{
 			Status:  http.StatusNotFound,
-			Message: "Category Not Found!",
+			Message: "Question Not Found!",
 		}
 		data, _ := json.MarshalIndent(res, "", "\t")
 		w.Header().Set("Content-Type", "application/json")
@@ -111,20 +111,20 @@ func AddQuestion(w http.ResponseWriter, r *http.Request) {
 		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
-	if role != "admin" {
+	if role != utils.Adm {
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
 
 	adminName := controller.GetAdminName(int(tokenID))
 
-	categoryID := controller.GetMaterialID(question.CategoryID, "category")
+	categoryID := controller.GetMaterialID(question.CategoryID, utils.Ctg)
 
 	if categoryID != question.CategoryID {
 		w.WriteHeader(http.StatusBadRequest)
 		res := response.BaseResponse{
 			Status:  http.StatusBadRequest,
-			Message: "Category ID tidak tersedia!",
+			Message: "Category Not Found!",
 		}
 		resError, _ := json.MarshalIndent(res, "", "\t")
 		w.Header().Set("Content-Type", "application/json")
@@ -167,7 +167,7 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
-	if tokenID != uint32(id) && role != "admin" {
+	if tokenID != uint32(id) && role != utils.Adm {
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
@@ -178,11 +178,11 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
-	cekIdCategory := controller.GetMaterialID(int(id), "category")
-	if cekIdCategory == 0 {
+	cekIdQuestion := controller.GetMaterialID(int(id), utils.Qst)
+	if cekIdQuestion == 0 {
 		res := response.BaseResponse{
 			Status:  http.StatusNotFound,
-			Message: "Category Not Found!",
+			Message: "Question Not Found!",
 		}
 		data, _ := json.MarshalIndent(res, "", "\t")
 		w.Header().Set("Content-Type", "application/json")
@@ -192,13 +192,13 @@ func UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 
 	adminName := controller.GetAdminName(int(tokenID))
 
-	categoryID := controller.GetMaterialID(question.CategoryID, "category")
+	categoryID := controller.GetMaterialID(question.CategoryID, utils.Ctg)
 
 	if categoryID != question.CategoryID {
 		w.WriteHeader(http.StatusBadRequest)
 		res := response.BaseResponse{
 			Status:  http.StatusBadRequest,
-			Message: "Category ID tidak tersedia!",
+			Message: "Category Not Found!",
 		}
 		resError, _ := json.MarshalIndent(res, "", "\t")
 		w.Header().Set("Content-Type", "application/json")
@@ -241,7 +241,7 @@ func DeleteQuestion(w http.ResponseWriter, r *http.Request) {
 		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
-	if tokenID != uint32(id) && role != "admin" {
+	if tokenID != uint32(id) && role != utils.Adm {
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
@@ -258,8 +258,8 @@ func DeleteQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	CekCategoryInQuestion := controller.CekMaterialInOtherRelation(int(id), "question_id", "answer")
-	if CekCategoryInQuestion == int(id) {
+	CekQuestionInAnswer := controller.CekMaterialInOtherRelation(int(id), "question_id", utils.Anw)
+	if CekQuestionInAnswer == int(id) {
 		res := response.BaseResponse{
 			Status:  http.StatusBadRequest,
 			Message: "Question Used In Answer!",
