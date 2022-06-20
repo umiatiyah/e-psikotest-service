@@ -25,6 +25,16 @@ func GetAdmins(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
+	_, role, err := auth.ExtractTokenID(r)
+	if err != nil {
+		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
+		return
+	}
+	if role != "admin" {
+		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
+		return
+	}
+
 	var userAdmin []response.AdminListResponse
 
 	for rows.Next() {
@@ -50,12 +60,12 @@ func GetAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenID, err := auth.ExtractTokenID(r)
+	tokenID, role, err := auth.ExtractTokenID(r)
 	if err != nil {
 		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
-	if tokenID != uint32(id) {
+	if tokenID != uint32(id) || role != "admin" {
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
@@ -79,6 +89,16 @@ func AddAdmin(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&admin)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+
+	_, role, err := auth.ExtractTokenID(r)
+	if err != nil {
+		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
+		return
+	}
+	if role != "admin" {
+		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
+		return
 	}
 
 	sqlCekUser := controller.SqlQueryCek("admin")
@@ -130,12 +150,12 @@ func UpdateAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenID, err := auth.ExtractTokenID(r)
+	tokenID, role, err := auth.ExtractTokenID(r)
 	if err != nil {
 		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
-	if tokenID != uint32(id) {
+	if tokenID != uint32(id) || role != "admin" {
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
@@ -194,12 +214,12 @@ func DeleteAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenID, err := auth.ExtractTokenID(r)
+	tokenID, role, err := auth.ExtractTokenID(r)
 	if err != nil {
 		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 		return
 	}
-	if tokenID != uint32(id) {
+	if tokenID != uint32(id) || role != "admin" {
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
@@ -237,7 +257,7 @@ func LoginAdmin(w http.ResponseWriter, r *http.Request) {
 	sqlGetID := controller.SqlGetID("admin")
 	id := controller.GetUserID(admin.Email, sqlGetID)
 
-	token, err := controller.SignIn(admin.Email, admin.Password, sqlQuery, id)
+	token, err := controller.SignIn(admin.Email, admin.Password, sqlQuery, "admin", id)
 	if err != nil {
 		formattedError := utils.FormatError(err.Error())
 		response.ERROR(w, http.StatusUnprocessableEntity, formattedError)

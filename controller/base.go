@@ -3,7 +3,6 @@ package controller
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"main/configuration"
 	"main/controller/auth"
 	"main/model"
@@ -51,13 +50,10 @@ func SqlGetID(tbl string) string {
 	return `SELECT id FROM ` + tbl + ` WHERE email = $1`
 }
 
-func SignIn(email, password, sqlQuery string, id int) (response.Token, error) {
+func SignIn(email, password, sqlQuery, role string, id int) (response.Token, error) {
 
 	var err error
 	user := model.BaseUser{}
-	log.Print("IDUSER:: ", id)
-	log.Print("EMAIL:: ", email)
-	log.Print("PASSWORD:: ", password)
 
 	row := DB.QueryRow(sqlQuery, email)
 	err = row.Err()
@@ -72,6 +68,20 @@ func SignIn(email, password, sqlQuery string, id int) (response.Token, error) {
 			Token: "",
 		}, err
 	}
-	tok, _ := auth.CreateToken(id)
+	tok, _ := auth.CreateToken(id, role)
 	return tok, nil
+}
+
+func GetAdminName(id int) string {
+
+	var admin model.Admin
+	sqlQuery := `SELECT name FROM admin WHERE id = $1`
+
+	row := DB.QueryRow(sqlQuery, id)
+	switch err := row.Scan(&admin.Name); err {
+	case sql.ErrNoRows:
+		fmt.Println("No rows were returned!")
+	}
+
+	return admin.Name
 }
