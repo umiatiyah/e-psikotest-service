@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"main/response"
+	"main/utils"
 	"net/http"
 	"os"
 	"strconv"
@@ -16,7 +17,8 @@ import (
 func CreateToken(id int, role string) (response.Token, error) {
 	if id == 0 {
 		return response.Token{
-			Token: "undefined token, user not valid!",
+			Token: "undefined token",
+			Name:  "user not valid!",
 		}, nil
 	}
 	claims := jwt.MapClaims{}
@@ -26,8 +28,10 @@ func CreateToken(id int, role string) (response.Token, error) {
 	claims["exp"] = time.Now().Add(time.Hour * 1).Unix() //Token expires after 1 hour
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tok, _ := token.SignedString([]byte(os.Getenv("API_SECRET")))
+	name := utils.GetAdminName(int(id), utils.Adm)
 	return response.Token{
 		Token: tok,
+		Name:  name,
 	}, nil
 
 }
@@ -94,6 +98,7 @@ func MiddlewareAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := TokenValid(r)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
 			return
 		}

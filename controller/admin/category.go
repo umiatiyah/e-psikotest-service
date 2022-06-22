@@ -20,17 +20,14 @@ import (
 
 func GetCategories(w http.ResponseWriter, r *http.Request) {
 
-	rows, err := controller.DB.Query("SELECT * FROM category ORDER BY id asc")
+	rows, err := utils.DB.Query("SELECT * FROM category ORDER BY id asc")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	_, role, err := auth.ExtractTokenID(r)
-	if err != nil {
-		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
-		return
-	}
-	if role != utils.Adm {
+	if err != nil || role != utils.Adm {
+		w.Header().Set("Content-Type", "application/json")
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
@@ -62,11 +59,8 @@ func GetCategory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, role, err := auth.ExtractTokenID(r)
-	if err != nil {
-		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
-		return
-	}
-	if role != utils.Adm {
+	if err != nil || role != utils.Adm {
+		w.Header().Set("Content-Type", "application/json")
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
@@ -85,7 +79,7 @@ func GetCategory(w http.ResponseWriter, r *http.Request) {
 
 	var category model.Category
 
-	err = controller.DB.QueryRow("SELECT * FROM category WHERE id = $1", id).
+	err = utils.DB.QueryRow("SELECT * FROM category WHERE id = $1", id).
 		Scan(&category.ID, &category.Value, &category.MinScore, &category.Duration, &category.LimitQuestion,
 			&category.CreatedAt, &category.CreatedBy, &category.UpdatedAt, &category.UpdatedBy)
 
@@ -108,19 +102,16 @@ func AddCategory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tokenID, role, err := auth.ExtractTokenID(r)
-	if err != nil {
-		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
-		return
-	}
-	if role != utils.Adm {
+	if err != nil || role != utils.Adm {
+		w.Header().Set("Content-Type", "application/json")
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
 
-	adminName := controller.GetAdminName(int(tokenID))
+	adminName := utils.GetAdminName(int(tokenID), utils.Adm)
 
 	sqlStatement := `INSERT INTO category (value, min_score, duration, limit_question, created_at, updated_at, created_by, updated_by ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
-	_, err = controller.DB.Exec(sqlStatement, category.Value, category.MinScore, category.Duration, category.LimitQuestion, time.Now(), time.Now(), adminName, adminName)
+	_, err = utils.DB.Exec(sqlStatement, category.Value, category.MinScore, category.Duration, category.LimitQuestion, time.Now(), time.Now(), adminName, adminName)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		panic(err)
@@ -151,11 +142,8 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tokenID, role, err := auth.ExtractTokenID(r)
-	if err != nil {
-		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
-		return
-	}
-	if tokenID != uint32(id) && role != utils.Adm {
+	if err != nil || tokenID != uint32(id) || role != utils.Adm {
+		w.Header().Set("Content-Type", "application/json")
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
@@ -178,10 +166,10 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	adminName := controller.GetAdminName(int(tokenID))
+	adminName := utils.GetAdminName(int(tokenID), utils.Adm)
 
 	sqlStatement := `UPDATE category SET value = $1, min_score = $2, duration = $3, limit_question = $4, updated_at = $5, updated_by = $6 WHERE id = $7`
-	_, err = controller.DB.Exec(sqlStatement, category.Value, category.MinScore, category.Duration, category.LimitQuestion, time.Now(), adminName, id)
+	_, err = utils.DB.Exec(sqlStatement, category.Value, category.MinScore, category.Duration, category.LimitQuestion, time.Now(), adminName, id)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		panic(err)
@@ -212,11 +200,8 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tokenID, role, err := auth.ExtractTokenID(r)
-	if err != nil {
-		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
-		return
-	}
-	if tokenID != uint32(id) && role != utils.Adm {
+	if err != nil || tokenID != uint32(id) || role != utils.Adm {
+		w.Header().Set("Content-Type", "application/json")
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
@@ -245,8 +230,8 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sqlStatement := `DELETE FROM category WHERE id = $1`
-	_, err = controller.DB.Exec(sqlStatement, id)
-	row := controller.DB.QueryRow(sqlStatement, id)
+	_, err = utils.DB.Exec(sqlStatement, id)
+	row := utils.DB.QueryRow(sqlStatement, id)
 	switch err := row.Scan(&category.ID); err {
 	case sql.ErrNoRows:
 		fmt.Println("No rows were returned!")

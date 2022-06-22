@@ -20,17 +20,14 @@ import (
 
 func GetAnswers(w http.ResponseWriter, r *http.Request) {
 
-	rows, err := controller.DB.Query("SELECT * FROM answer ORDER BY id asc")
+	rows, err := utils.DB.Query("SELECT * FROM answer ORDER BY id asc")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	_, role, err := auth.ExtractTokenID(r)
-	if err != nil {
-		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
-		return
-	}
-	if role != utils.Adm {
+	if err != nil || role != utils.Adm {
+		w.Header().Set("Content-Type", "application/json")
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
@@ -61,11 +58,8 @@ func GetAnswer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, role, err := auth.ExtractTokenID(r)
-	if err != nil {
-		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
-		return
-	}
-	if role != utils.Adm {
+	if err != nil || role != utils.Adm {
+		w.Header().Set("Content-Type", "application/json")
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
@@ -84,7 +78,7 @@ func GetAnswer(w http.ResponseWriter, r *http.Request) {
 
 	var answer model.Answer
 
-	err = controller.DB.QueryRow("SELECT * FROM answer WHERE id = $1", id).
+	err = utils.DB.QueryRow("SELECT * FROM answer WHERE id = $1", id).
 		Scan(&answer.ID, &answer.QuestionID, &answer.Value, &answer.Score,
 			&answer.CreatedAt, &answer.CreatedBy, &answer.UpdatedAt, &answer.UpdatedBy)
 
@@ -107,16 +101,13 @@ func AddAnswer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tokenID, role, err := auth.ExtractTokenID(r)
-	if err != nil {
-		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
-		return
-	}
-	if role != utils.Adm {
+	if err != nil || role != utils.Adm {
+		w.Header().Set("Content-Type", "application/json")
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
 
-	adminName := controller.GetAdminName(int(tokenID))
+	adminName := utils.GetAdminName(int(tokenID), utils.Adm)
 
 	questionID := controller.GetMaterialID(answer.QuestionID, utils.Qst)
 
@@ -133,7 +124,7 @@ func AddAnswer(w http.ResponseWriter, r *http.Request) {
 	} else {
 
 		sqlStatement := `INSERT INTO answer (question_id, value, score, created_at, updated_at, created_by, updated_by ) VALUES ($1, $2, $3, $4, $5, $6, $7)`
-		_, err = controller.DB.Exec(sqlStatement, answer.QuestionID, answer.Value, answer.Score, time.Now(), time.Now(), adminName, adminName)
+		_, err = utils.DB.Exec(sqlStatement, answer.QuestionID, answer.Value, answer.Score, time.Now(), time.Now(), adminName, adminName)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			panic(err)
@@ -163,11 +154,8 @@ func UpdateAnswer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tokenID, role, err := auth.ExtractTokenID(r)
-	if err != nil {
-		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
-		return
-	}
-	if tokenID != uint32(id) && role != utils.Adm {
+	if err != nil || tokenID != uint32(id) || role != utils.Adm {
+		w.Header().Set("Content-Type", "application/json")
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
@@ -190,7 +178,7 @@ func UpdateAnswer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	adminName := controller.GetAdminName(int(tokenID))
+	adminName := utils.GetAdminName(int(tokenID), utils.Adm)
 
 	questionID := controller.GetMaterialID(answer.QuestionID, utils.Qst)
 
@@ -207,7 +195,7 @@ func UpdateAnswer(w http.ResponseWriter, r *http.Request) {
 	} else {
 
 		sqlStatement := `UPDATE answer SET question_id = $1, value = $2, score = $3, updated_at = $4, updated_by = $5 WHERE id = $6`
-		_, err = controller.DB.Exec(sqlStatement, answer.QuestionID, answer.Value, answer.Score, time.Now(), adminName, id)
+		_, err = utils.DB.Exec(sqlStatement, answer.QuestionID, answer.Value, answer.Score, time.Now(), adminName, id)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			panic(err)
@@ -237,11 +225,8 @@ func DeleteAnswer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tokenID, role, err := auth.ExtractTokenID(r)
-	if err != nil {
-		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
-		return
-	}
-	if tokenID != uint32(id) && role != utils.Adm {
+	if err != nil || tokenID != uint32(id) || role != utils.Adm {
+		w.Header().Set("Content-Type", "application/json")
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
@@ -259,8 +244,8 @@ func DeleteAnswer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sqlStatement := `DELETE FROM answer WHERE id = $1`
-	_, err = controller.DB.Exec(sqlStatement, id)
-	row := controller.DB.QueryRow(sqlStatement, id)
+	_, err = utils.DB.Exec(sqlStatement, id)
+	row := utils.DB.QueryRow(sqlStatement, id)
 	switch err := row.Scan(&answer.ID); err {
 	case sql.ErrNoRows:
 		fmt.Println("No rows were returned!")

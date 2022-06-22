@@ -1,11 +1,19 @@
 package utils
 
 import (
+	"database/sql"
 	"errors"
+	"fmt"
 	"log"
+	"main/configuration"
+	"main/model"
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
+)
+
+var (
+	DB = configuration.OpenConnection()
 )
 
 func HashAndSalt(pwd []byte) string {
@@ -36,4 +44,18 @@ func FormatError(err string) error {
 	}
 
 	return errors.New("Incorrect Details")
+}
+
+func GetAdminName(id int, tbl string) string {
+
+	var admin model.Admin
+	sqlQuery := `SELECT name FROM ` + tbl + ` WHERE id = $1`
+
+	row := DB.QueryRow(sqlQuery, id)
+	switch err := row.Scan(&admin.Name); err {
+	case sql.ErrNoRows:
+		fmt.Println("No rows were returned!")
+	}
+
+	return admin.Name
 }

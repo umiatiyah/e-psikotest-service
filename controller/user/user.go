@@ -9,6 +9,7 @@ import (
 	"main/controller"
 	"main/controller/auth"
 	"main/model"
+	"main/query"
 	"main/response"
 	"main/utils"
 	"net/http"
@@ -20,17 +21,14 @@ import (
 
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 
-	rows, err := controller.DB.Query("SELECT id, name, email, nik FROM users ORDER BY id asc")
+	rows, err := utils.DB.Query("SELECT id, name, email, nik FROM users ORDER BY id asc")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	_, role, err := auth.ExtractTokenID(r)
-	if err != nil {
-		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
-		return
-	}
-	if role != "admin" {
+	if err != nil || role != utils.Adm {
+		w.Header().Set("Content-Type", "application/json")
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
@@ -62,7 +60,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 
 	var user response.UserListResponse
 
-	err = controller.DB.QueryRow("SELECT id, name, email, nik FROM users WHERE id = $1", id).Scan(&user.Id, &user.Name, &user.Email, &user.NIK)
+	err = utils.DB.QueryRow("SELECT id, name, email, nik FROM users WHERE id = $1", id).Scan(&user.Id, &user.Name, &user.Email, &user.NIK)
 	if err != nil {
 		fmt.Print(err)
 	}
@@ -82,16 +80,13 @@ func AddUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, role, err := auth.ExtractTokenID(r)
-	if err != nil {
-		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
-		return
-	}
-	if role != "admin" {
+	if err != nil || role != utils.Adm {
+		w.Header().Set("Content-Type", "application/json")
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
 
-	sqlCekUser := controller.SqlQueryCek(utils.Usr)
+	sqlCekUser := query.SqlQueryCek(utils.Usr)
 	exist := controller.CekUser(user.Email, sqlCekUser)
 
 	if exist.Email != "" {
@@ -112,7 +107,7 @@ func AddUser(w http.ResponseWriter, r *http.Request) {
 	} else {
 
 		sqlStatement := `INSERT INTO users (name, email, nik, password, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)`
-		_, err = controller.DB.Exec(sqlStatement, user.Name, user.Email, user.NIK, utils.HashAndSalt([]byte(user.Password)), time.Now(), time.Now())
+		_, err = utils.DB.Exec(sqlStatement, user.Name, user.Email, user.NIK, utils.HashAndSalt([]byte(user.Password)), time.Now(), time.Now())
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			panic(err)
@@ -143,11 +138,8 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, role, err := auth.ExtractTokenID(r)
-	if err != nil {
-		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
-		return
-	}
-	if role != "admin" {
+	if err != nil || role != utils.Adm {
+		w.Header().Set("Content-Type", "application/json")
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
@@ -158,7 +150,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
-	sqlCekUser := controller.SqlQueryCek(utils.Usr)
+	sqlCekUser := query.SqlQueryCek(utils.Usr)
 	exist := controller.CekUser(user.Email, sqlCekUser)
 
 	if exist.Email != "" {
@@ -179,7 +171,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	} else {
 
 		sqlStatement := `UPDATE users SET name = $1, email = $2, nik = $3, password = $4, updated_at = $5 WHERE id = $6`
-		_, err = controller.DB.Exec(sqlStatement, user.Name, user.Email, user.NIK, utils.HashAndSalt([]byte(user.Password)), time.Now(), id)
+		_, err = utils.DB.Exec(sqlStatement, user.Name, user.Email, user.NIK, utils.HashAndSalt([]byte(user.Password)), time.Now(), id)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			panic(err)
@@ -208,17 +200,14 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, role, err := auth.ExtractTokenID(r)
-	if err != nil {
-		response.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized"))
-		return
-	}
-	if role != "admin" {
+	if err != nil || role != utils.Adm {
+		w.Header().Set("Content-Type", "application/json")
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
 
 	sqlStatement := `DELETE FROM users WHERE id = $1`
-	_, err = controller.DB.Exec(sqlStatement, id)
+	_, err = utils.DB.Exec(sqlStatement, id)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		panic(err)
@@ -246,8 +235,8 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sqlQuery := controller.SqlQueryCek(utils.Usr)
-	sqlGetID := controller.SqlGetID(utils.Usr)
+	sqlQuery := query.SqlQueryCek(utils.Usr)
+	sqlGetID := query.SqlGetID(utils.Usr)
 	id := controller.GetUserID(user.Email, sqlGetID)
 
 	token, err := controller.SignIn(user.Email, user.Password, sqlQuery, utils.Usr, id)
@@ -256,5 +245,6 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		response.ERROR(w, http.StatusUnprocessableEntity, formattedError)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
 	response.JSON(w, http.StatusOK, token)
 }
