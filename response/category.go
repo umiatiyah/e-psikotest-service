@@ -1,7 +1,7 @@
 package response
 
 type CategoryResponse struct {
-	Value         string `json:"value"`
+	Name          string `json:"value"`
 	MinScore      int    `json:"min_score"`
 	Duration      int    `json:"duration"`
 	LimitQuestion int    `json:"limit_question"`

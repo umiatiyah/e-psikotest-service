@@ -2,7 +2,7 @@ package model
 
 type Category struct {
 	ID            int    `json:"id"`
-	Value         string `json:"value"`
+	Name          string `json:"name"`
 	MinScore      int    `json:"min_score"`
 	Duration      int    `json:"duration"`
 	LimitQuestion int    `json:"limit_question"`

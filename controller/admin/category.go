@@ -36,7 +36,7 @@ func GetCategories(w http.ResponseWriter, r *http.Request) {
 
 	for rows.Next() {
 		var category model.Category
-		rows.Scan(&category.ID, &category.Value, &category.MinScore, &category.Duration, &category.LimitQuestion,
+		rows.Scan(&category.ID, &category.Name, &category.MinScore, &category.Duration, &category.LimitQuestion,
 			&category.CreatedAt, &category.UpdatedAt, &category.CreatedBy, &category.UpdatedBy)
 
 		categories = append(categories, category)
@@ -80,7 +80,7 @@ func GetCategory(w http.ResponseWriter, r *http.Request) {
 	var category model.Category
 
 	err = utils.DB.QueryRow("SELECT * FROM category WHERE id = $1", id).
-		Scan(&category.ID, &category.Value, &category.MinScore, &category.Duration, &category.LimitQuestion,
+		Scan(&category.ID, &category.Name, &category.MinScore, &category.Duration, &category.LimitQuestion,
 			&category.CreatedAt, &category.CreatedBy, &category.UpdatedAt, &category.UpdatedBy)
 
 	if err != nil {
@@ -111,14 +111,14 @@ func AddCategory(w http.ResponseWriter, r *http.Request) {
 	adminName := utils.GetAdminName(int(tokenID), utils.Adm)
 
 	sqlStatement := `INSERT INTO category (value, min_score, duration, limit_question, created_at, updated_at, created_by, updated_by ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
-	_, err = utils.DB.Exec(sqlStatement, category.Value, category.MinScore, category.Duration, category.LimitQuestion, time.Now(), time.Now(), adminName, adminName)
+	_, err = utils.DB.Exec(sqlStatement, category.Name, category.MinScore, category.Duration, category.LimitQuestion, time.Now(), time.Now(), adminName, adminName)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		panic(err)
 	}
 
 	data := response.CategoryResponse{
-		Value:         category.Value,
+		Name:          category.Name,
 		MinScore:      category.MinScore,
 		Duration:      category.Duration,
 		LimitQuestion: category.LimitQuestion,
@@ -169,13 +169,13 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	adminName := utils.GetAdminName(int(tokenID), utils.Adm)
 
 	sqlStatement := `UPDATE category SET value = $1, min_score = $2, duration = $3, limit_question = $4, updated_at = $5, updated_by = $6 WHERE id = $7`
-	_, err = utils.DB.Exec(sqlStatement, category.Value, category.MinScore, category.Duration, category.LimitQuestion, time.Now(), adminName, id)
+	_, err = utils.DB.Exec(sqlStatement, category.Name, category.MinScore, category.Duration, category.LimitQuestion, time.Now(), adminName, id)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		panic(err)
 	}
 	data := response.CategoryResponse{
-		Value:         category.Value,
+		Name:          category.Name,
 		MinScore:      category.MinScore,
 		Duration:      category.Duration,
 		LimitQuestion: category.LimitQuestion,
@@ -199,8 +199,8 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenID, role, err := auth.ExtractTokenID(r)
-	if err != nil || tokenID != uint32(id) || role != utils.Adm {
+	_, role, err := auth.ExtractTokenID(r)
+	if err != nil || role != utils.Adm {
 		w.Header().Set("Content-Type", "application/json")
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
