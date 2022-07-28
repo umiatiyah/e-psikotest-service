@@ -1,0 +1,23 @@
+package: .
+import:
+- package: github.com/dgrijalva/jwt-go
+- package: github.com/gorilla/handlers
+- package: github.com/gorilla/mux
+- package: github.com/joho/godotenv
+- package: github.com/lib/pq
+- package: golang.org/x/crypto
+  subpackages:
+  - bcrypt
+- package: main/configuration
+- package: main/controller
+  subpackages:
+  - admin
+  - auth
+  - user
+- package: main/model
+- package: main/query
+- package: main/response
+- package: main/server
+- package: main/utils
+ignore:
+- main

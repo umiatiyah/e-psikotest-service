@@ -1,0 +1,42 @@
+hash: b5008e92f5268986282c0ddcc10e3519e4a68a766f4f6779eb82265df2fbd72f
+updated: 2022-07-29T00:36:01.934892716+07:00
+imports:
+- name: github.com/dgrijalva/jwt-go
+  version: 9742bd7fca1c67ba2eb793750f56ee3094d1b04f
+- name: github.com/felixge/httpsnoop
+  version: 8b7a3718bcc5cce0a251b2d21eb77c58bcb1f788
+- name: github.com/gorilla/handlers
+  version: 3e030244b4ba0480763356fc8ca0ade6222e2da0
+- name: github.com/gorilla/mux
+  version: c889844abd3601217c96aabc4b2dd89f6d904c01
+- name: github.com/joho/godotenv
+  version: add39c6f94ba6aedc178b80b33eb9f2d6ae8f2ec
+- name: github.com/lib/pq
+  version: 8c6de565f76fb5cd40a5c1b8ce583fbc3ba1bd0e
+  subpackages:
+  - oid
+  - scram
+- name: golang.org/x/crypto
+  version: 630584e8d5aaa1472863b49679b2d5548d80dcba
+  subpackages:
+  - bcrypt
+  - blowfish
+- name: main/configuration
+  version: ""
+- name: main/controller
+  version: ""
+  subpackages:
+  - admin
+  - auth
+  - user
+- name: main/model
+  version: ""
+- name: main/query
+  version: ""
+- name: main/response
+  version: ""
+- name: main/server
+  version: ""
+- name: main/utils
+  version: ""
+testImports: []
