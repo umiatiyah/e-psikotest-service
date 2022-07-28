@@ -20,7 +20,7 @@ import (
 
 func GetAnswers(w http.ResponseWriter, r *http.Request) {
 
-	rows, err := utils.DB.Query("SELECT * FROM answer ORDER BY id asc")
+	rows, err := utils.DB.Query("SELECT a.id, c.id, c.value, q.id, q.value, q.is_active, a.value, a.score FROM answer a JOIN question q ON a.question_id = q.id JOIN category c ON q.category_id = c.id ORDER BY a.id asc")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -32,11 +32,17 @@ func GetAnswers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var answers []model.Answer
+	var answers []response.AnswerResponse
 
 	for rows.Next() {
-		var answer model.Answer
-		rows.Scan(&answer.ID, &answer.QuestionID, &answer.Value, &answer.Score, &answer.CreatedAt, &answer.UpdatedAt, &answer.CreatedBy, &answer.UpdatedBy)
+		var answer response.AnswerResponse
+		rows.Scan(&answer.ID, &answer.CategoryID, &answer.CategoryValue, &answer.QuestionID, &answer.QuestionValue, &answer.QuestiionStatus, &answer.AnswerValue, &answer.Score)
+
+		if answer.QuestiionStatus == "true" {
+			answer.QuestiionStatus = "Active"
+		} else {
+			answer.QuestiionStatus = "Inactive"
+		}
 
 		answers = append(answers, answer)
 	}
@@ -78,8 +84,8 @@ func GetAnswer(w http.ResponseWriter, r *http.Request) {
 
 	var answer model.Answer
 
-	err = utils.DB.QueryRow("SELECT * FROM answer WHERE id = $1", id).
-		Scan(&answer.ID, &answer.QuestionID, &answer.Value, &answer.Score,
+	err = utils.DB.QueryRow("SELECT a.id, q.id, q.value, a.value, a.score, a.created_at, a.created_by, a.updated_at, a.updated_by FROM answer a JOIN question q ON a.question_id = q.id WHERE a.id = $1", id).
+		Scan(&answer.ID, &answer.QuestionID, &answer.QuestionValue, &answer.Value, &answer.Score,
 			&answer.CreatedAt, &answer.CreatedBy, &answer.UpdatedAt, &answer.UpdatedBy)
 
 	if err != nil {
@@ -131,9 +137,9 @@ func AddAnswer(w http.ResponseWriter, r *http.Request) {
 		}
 
 		data := response.AnswerResponse{
-			QuestionID: answer.QuestionID,
-			Value:      answer.Value,
-			Score:      answer.Score,
+			QuestionID:  answer.QuestionID,
+			AnswerValue: answer.Value,
+			Score:       answer.Score,
 			Message: response.BaseResponse{
 				Status:  http.StatusOK,
 				Message: "Answer Created!",
@@ -154,7 +160,7 @@ func UpdateAnswer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tokenID, role, err := auth.ExtractTokenID(r)
-	if err != nil || tokenID != uint32(id) || role != utils.Adm {
+	if err != nil || role != utils.Adm {
 		w.Header().Set("Content-Type", "application/json")
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
@@ -201,9 +207,9 @@ func UpdateAnswer(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 		data := response.AnswerResponse{
-			QuestionID: answer.QuestionID,
-			Value:      answer.Value,
-			Score:      answer.Score,
+			QuestionID:  answer.QuestionID,
+			AnswerValue: answer.Value,
+			Score:       answer.Score,
 			Message: response.BaseResponse{
 				Status:  http.StatusOK,
 				Message: "Answer Updated!",
@@ -224,8 +230,8 @@ func DeleteAnswer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenID, role, err := auth.ExtractTokenID(r)
-	if err != nil || tokenID != uint32(id) || role != utils.Adm {
+	_, role, err := auth.ExtractTokenID(r)
+	if err != nil || role != utils.Adm {
 		w.Header().Set("Content-Type", "application/json")
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return

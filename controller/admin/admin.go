@@ -158,7 +158,7 @@ func UpdateAdmin(w http.ResponseWriter, r *http.Request) {
 	sqlCekUser := query.SqlQueryCek(utils.Adm)
 	exist := controller.CekUser(admin.Email, sqlCekUser)
 
-	if exist.Email != "" {
+	if exist.Email != "" && exist.Email != admin.Email {
 
 		userAdmin := response.AdminResponse{
 			Name:  admin.Name,

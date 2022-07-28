@@ -1,21 +1,24 @@
 package response
 
 type QuestionResponse struct {
-	CategoryID int    `json:"category_id"`
-	Value      string `json:"value"`
-	IsActive   bool   `json:"is_active"`
-	Message    BaseResponse
+	ID           int    `json:"id"`
+	CategoryID   int    `json:"category_id"`
+	CategoryName string `json:"category_name"`
+	Value        string `json:"value"`
+	IsActive     string `json:"is_active"`
+	Message      BaseResponse
 }
 
 type QuestionUserResponses struct {
-	ID       int                   `json:"id"`
-	Category string                `json:"category_name"`
-	Question string                `json:"question_value"`
-	Answers  []AnswerUserResponses `json:"answers_list"`
+	CategoryID    int                   `json:"category_id"`
+	CategoryValue string                `json:"category_value"`
+	QuestionID    int                   `json:"question_id"`
+	QuestionValue string                `json:"question_value"`
+	Answers       []AnswerUserResponses `json:"answers_list"`
 }
 
 type AnswerUserResponses struct {
-	ID         int    `json:"id"`
-	QuestionID int    `json:"question_id"`
-	Value      string `json:"answer_value"`
+	AnswerID    int    `json:"answer_id"`
+	AnswerValue string `json:"answer_value"`
+	QuestionID  int    `json:"question_id"`
 }

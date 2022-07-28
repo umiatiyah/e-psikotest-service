@@ -142,7 +142,7 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tokenID, role, err := auth.ExtractTokenID(r)
-	if err != nil || tokenID != uint32(id) || role != utils.Adm {
+	if err != nil || role != utils.Adm {
 		w.Header().Set("Content-Type", "application/json")
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
