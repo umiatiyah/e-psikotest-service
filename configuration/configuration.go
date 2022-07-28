@@ -15,26 +15,27 @@ var err error
 func OpenConnection() *sql.DB {
 
 	err = godotenv.Load()
+	var db *sql.DB
 	if err != nil {
 		log.Fatalf("Error getting env, %v", err)
 	}
 
-	host := os.Getenv("host")
-	port := os.Getenv("port")
-	user := os.Getenv("user")
-	password := os.Getenv("password")
-	dbname := os.Getenv("dbname")
+	if os.Getenv("ENV") == "dev" {
+		host := os.Getenv("DB_HOST")
+		port := os.Getenv("DB_PORT")
+		user := os.Getenv("DB_USERNAME")
+		password := os.Getenv("DB_PASSWORD")
+		dbname := os.Getenv("DB_NAME")
 
-	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
+		psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
+			"password=%s dbname=%s sslmode=disable",
+			host, port, user, password, dbname)
 
-	db, err := sql.Open("postgres", psqlInfo)
-	if err != nil {
-		panic(err)
+		db, err = sql.Open("postgres", psqlInfo)
+
+	} else {
+		db, err = sql.Open("postgres", os.Getenv("DATABASE_URL"))
 	}
-
-	err = db.Ping()
 	if err != nil {
 		panic(err)
 	}
