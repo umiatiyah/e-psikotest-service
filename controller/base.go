@@ -47,15 +47,17 @@ func SignIn(email, password, sqlQuery, role string, id int) (response.Token, err
 	err = row.Err()
 	if err != nil {
 		return response.Token{
-			Token: "",
-			Name:  "",
+			Token:  "",
+			Name:   "",
+			UserID: 0,
 		}, err
 	}
 	err = utils.VerifyPassword(user.Password, password)
 	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword {
 		return response.Token{
-			Token: "",
-			Name:  "",
+			Token:  "",
+			Name:   "",
+			UserID: 0,
 		}, err
 	}
 	tok, _ := auth.CreateToken(id, role)

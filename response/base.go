@@ -36,6 +36,7 @@ func ERROR(w http.ResponseWriter, statusCode int, err error) {
 }
 
 type Token struct {
-	Token string `json:"token"`
-	Name  string `json:"name"`
+	Token  string `json:"token"`
+	Name   string `json:"name"`
+	UserID int    `json:"user_id"`
 }

@@ -17,8 +17,9 @@ import (
 func CreateToken(id int, role string) (response.Token, error) {
 	if id == 0 {
 		return response.Token{
-			Token: "undefined token",
-			Name:  "user not valid!",
+			Token:  "undefined token",
+			Name:   "user not valid!",
+			UserID: 0,
 		}, nil
 	}
 	claims := jwt.MapClaims{}
@@ -30,8 +31,9 @@ func CreateToken(id int, role string) (response.Token, error) {
 	tok, _ := token.SignedString([]byte(os.Getenv("API_SECRET")))
 	name := utils.GetAdminName(int(id), utils.Adm)
 	return response.Token{
-		Token: tok,
-		Name:  name,
+		Token:  tok,
+		Name:   name,
+		UserID: id,
 	}, nil
 
 }
