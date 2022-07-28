@@ -89,3 +89,31 @@ func CekMaterialInOtherRelation(id int, column, tbl string) int {
 
 	return idMaterial.ID
 }
+
+func GetCategoryIDFromQuestion(id int) int {
+
+	var idMaterial response.IdResponse
+	sqlQuery := query.SqlGetCategoryIDFromQuestion()
+
+	row := utils.DB.QueryRow(sqlQuery, id)
+	switch err := row.Scan(&idMaterial.ID); err {
+	case sql.ErrNoRows:
+		fmt.Println("No rows were returned!")
+	}
+
+	return idMaterial.ID
+}
+
+func GetQuestionIDFromAnswer(id int) int {
+
+	var idMaterial response.IdResponse
+	sqlQuery := query.SqlGetQuestionIDFromAnswer()
+
+	row := utils.DB.QueryRow(sqlQuery, id)
+	switch err := row.Scan(&idMaterial.ID); err {
+	case sql.ErrNoRows:
+		fmt.Println("No rows were returned!")
+	}
+
+	return idMaterial.ID
+}

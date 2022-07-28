@@ -19,3 +19,11 @@ func SqlGetMaterialID(tbl string) string {
 func SqlCekMaterialInOtherRelation(id int, column, tbl string) string {
 	return `SELECT ` + column + ` FROM ` + tbl + ` WHERE ` + column + ` = $1`
 }
+
+func SqlGetCategoryIDFromQuestion() string {
+	return `SELECT category_id FROM question WHERE id = $1`
+}
+
+func SqlGetQuestionIDFromAnswer() string {
+	return `SELECT question_id FROM answer WHERE id = $1`
+}
