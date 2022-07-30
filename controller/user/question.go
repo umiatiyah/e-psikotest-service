@@ -70,6 +70,11 @@ func SaveHistory(w http.ResponseWriter, r *http.Request) {
 	w.Write(dataAnswer)
 }
 
+type BO struct {
+	Bobot    int
+	Category int
+}
+
 func AddValuation(w http.ResponseWriter, r *http.Request) {
 	var history model.DataV2
 	err := json.NewDecoder(r.Body).Decode(&history)
@@ -80,6 +85,9 @@ func AddValuation(w http.ResponseWriter, r *http.Request) {
 	var userID int
 	var result bool
 	var results []bool
+	bos := make(map[int]BO)
+	bobotScore := make(map[int]int)
+	category := make(map[int]int)
 	for _, v := range history.Data {
 
 		questionID := controller.GetQuestionIDFromAnswer(v.AnswerID)
@@ -92,30 +100,55 @@ func AddValuation(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			panic(err)
 		}
+		userID = v.UserID
+	}
 
-		var s model.PreValuation
-		err = utils.DB.QueryRow("SELECT c.id, c.min_score, a.score FROM answer a JOIN question q ON a.question_id = q.id JOIN category c ON q.category_id = c.id WHERE a.id = $1", v.AnswerID).
-			Scan(&s.CategoryID, &s.MinScore, &s.Score)
-		if err != nil {
-			log.Fatal(err)
+	var bobotUser []model.PreBobotValuation
+	bobot, err := utils.DB.Query("SELECT pv.user_id, c.id, a.score FROM history pv JOIN answer a ON pv.answer_id = a.id JOIN question q ON a.question_id = q.id JOIN category c ON q.category_id = c.id JOIN users u ON pv.user_id = u.id WHERE pv.user_id = $1 GROUP BY pv.user_id, c.id, a.score", userID)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for bobot.Next() {
+		var bv model.PreBobotValuation
+		bobot.Scan(&bv.UserID, &bv.CategoryID, &bv.Score)
+
+		bobotUser = append(bobotUser, bv)
+	}
+
+	for _, v := range bobotUser {
+		bobotScore[v.CategoryID] += v.Score
+		category[v.CategoryID] = v.CategoryID
+		bos[v.CategoryID] = BO{
+			Bobot:    bobotScore[v.CategoryID],
+			Category: v.CategoryID,
 		}
+	}
 
-		sqlStatementPrevaluation := `INSERT INTO prevaluation (user_id, category_id, score, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)`
-		_, err = utils.DB.Exec(sqlStatementPrevaluation, v.UserID, s.CategoryID, s.Score, time.Now(), time.Now())
+	for _, v := range bos {
+		sqlStatementValuation := `INSERT INTO bobotvaluation (user_id, category_id, total_score, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)`
+		_, err = utils.DB.Exec(sqlStatementValuation, userID, v.Category, v.Bobot, time.Now(), time.Now())
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			panic(err)
 		}
 
-		userID = v.UserID
-
-		if s.Score >= s.MinScore {
-			results = append(results, true)
+		var s model.PreValuation
+		err = utils.DB.QueryRow("SELECT c.id, c.min_score FROM category c WHERE c.id = $1", v.Category).
+			Scan(&s.CategoryID, &s.MinScore)
+		if err != nil {
+			log.Fatal(err)
 		}
-		if s.Score < s.MinScore {
-			results = append(results, false)
+		if s.CategoryID == v.Category {
+			if v.Bobot >= s.MinScore {
+				results = append(results, true)
+			}
+			if v.Bobot < s.MinScore {
+				results = append(results, false)
+			}
 		}
 	}
+
 	result = true
 	for _, v := range results {
 		if !v {
@@ -128,16 +161,10 @@ func AddValuation(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		panic(err)
 	}
-	var msg string
-	msg = "LULUS"
-	if !result {
-		msg = "TIDAK LULUS"
-	}
-	data := response.AnswerResponse{
-		Message: response.BaseResponse{
-			Status:  http.StatusOK,
-			Message: msg,
-		},
+
+	data := response.BaseResponse{
+		Status:  http.StatusOK,
+		Message: "Test Completed!",
 	}
 	dataAnswer, _ := json.MarshalIndent(data, "", "\t")
 	w.Header().Set("Content-Type", "application/json")
