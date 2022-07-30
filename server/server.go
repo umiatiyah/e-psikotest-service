@@ -52,6 +52,7 @@ func InitializeRoute(r *mux.Router) {
 	r.HandleFunc("/user/detail/{id}", auth.MiddlewareAuth(admin.GetUser)).Methods("GET")
 	r.HandleFunc("/user/update/{id}", auth.MiddlewareAuth(admin.UpdateUser)).Methods("POST")
 
+	r.HandleFunc("/user/cekUser/{id}", auth.MiddlewareAuth(user.CekUser)).Methods("GET")
 	r.HandleFunc("/user/question", auth.MiddlewareAuth(user.GetQuestions)).Methods("GET")
 	r.HandleFunc("/user/history", auth.MiddlewareAuth(user.SaveHistory)).Methods("POST")
 	r.HandleFunc("/user/historyV2", auth.MiddlewareAuth(user.AddValuation)).Methods("POST")

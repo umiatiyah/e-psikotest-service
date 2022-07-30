@@ -8,7 +8,10 @@ import (
 	"main/response"
 	"main/utils"
 	"net/http"
+	"strconv"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 func GetQuestions(w http.ResponseWriter, r *http.Request) {
@@ -38,6 +41,46 @@ func GetQuestions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data, _ := json.MarshalIndent(questions, "", "\t")
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(data)
+
+}
+
+type User struct {
+	ID int `json:"id"`
+}
+
+func CekUser(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.ParseUint(vars["id"], 10, 32)
+	if err != nil {
+		response.ERROR(w, http.StatusBadRequest, err)
+		return
+	}
+	var IDs []int
+	sql := "SELECT user_id FROM valuation WHERE user_id = $1"
+	rows, err := utils.DB.Query(sql, id)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for rows.Next() {
+		var idUser int
+		rows.Scan(&idUser)
+		IDs = append(IDs, idUser)
+	}
+	res := response.BaseResponse{}
+	if len(IDs) > 0 {
+		res = response.BaseResponse{
+			Status:  http.StatusOK,
+			Message: "Exists",
+		}
+	}
+	res = response.BaseResponse{
+		Status:  http.StatusOK,
+		Message: "Not Exists",
+	}
+	data, _ := json.MarshalIndent(res, "", "\t")
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(data)
