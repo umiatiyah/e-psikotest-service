@@ -170,3 +170,85 @@ func AddValuation(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(dataAnswer)
 }
+
+func AddValuationNew(w http.ResponseWriter, r *http.Request) {
+	var history model.DataV2
+	err := json.NewDecoder(r.Body).Decode(&history)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+
+	var userID int
+	for _, v := range history.Data {
+
+		questionID := controller.GetQuestionIDFromAnswer(v.AnswerID)
+
+		categoryID := controller.GetCategoryIDFromQuestion(questionID)
+
+		sqlStatementHistory := `INSERT INTO history (category_id, question_id, answer_id, user_id, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)`
+		_, err = utils.DB.Exec(sqlStatementHistory, categoryID, questionID, v.AnswerID, v.UserID, time.Now(), time.Now())
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			panic(err)
+		}
+		userID = v.UserID
+	}
+
+	var JumlahItem int
+	item := utils.DB.QueryRow("SELECT COUNT(*) FROM question WHERE is_active = true").
+		Scan(&JumlahItem)
+	if item != nil {
+		log.Fatal(item)
+	}
+
+	KategoriJawaban := 5
+	Xminimal := JumlahItem * 1
+	Xmaximal := JumlahItem * KategoriJawaban
+	Range := Xmaximal - Xminimal
+	Mean := (Xmaximal + Xminimal) / 2
+	SD := Range / (KategoriJawaban + 1)
+
+	var X int
+	var res string
+	for _, v := range history.Data {
+
+		score := utils.DB.QueryRow("SELECT score FROM answer WHERE id = $1", v.AnswerID).
+			Scan(&X)
+		if score != nil {
+			log.Fatal(score)
+		}
+		X += X
+
+	}
+
+	s1 := float64(Mean) - (1.5 * float64(SD))
+	s2 := float64(Mean) - (0.5 * float64(SD))
+	s3 := float64(Mean) + (0.5 * float64(SD))
+	s4 := float64(Mean) + (1.5 * float64(SD))
+	if float64(X) <= s1 {
+		res = "Sangat Rendah"
+	} else if s1 < float64(X) && float64(X) <= s2 {
+		res = "Rendah"
+	} else if s2 < float64(X) && float64(X) <= s3 {
+		res = "Sedang"
+	} else if s3 < float64(X) && float64(X) <= s4 {
+		res = "Tinggi"
+	} else if s4 < float64(X) {
+		res = "Sangat Tinggi"
+	}
+
+	sqlStatementValuation := `INSERT INTO valuation (user_id, result, created_at, updated_at) VALUES ($1, $2, $3, $4)`
+	_, err = utils.DB.Exec(sqlStatementValuation, userID, res, time.Now(), time.Now())
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		panic(err)
+	}
+
+	data := response.BaseResponse{
+		Status:  http.StatusOK,
+		Message: "Test Completed!",
+	}
+	dataAnswer, _ := json.MarshalIndent(data, "", "\t")
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(dataAnswer)
+}

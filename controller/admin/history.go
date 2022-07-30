@@ -92,12 +92,6 @@ func GetResult(w http.ResponseWriter, r *http.Request) {
 		var result response.ResultResponse
 		rows.Scan(&result.User, &result.NIKUser, &result.Result, &result.CreatedAt, &result.UpdatedAt)
 
-		if result.Result == "true" {
-			result.Result = "LULUS"
-		} else {
-			result.Result = "TIDAK LULUS"
-		}
-
 		results = append(results, result)
 	}
 
