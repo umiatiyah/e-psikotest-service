@@ -59,13 +59,14 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, role, err := auth.ExtractTokenID(r)
-	if err != nil || role != utils.Adm {
+	if err != nil || role != utils.Usr {
 		w.Header().Set("Content-Type", "application/json")
 		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		return
 	}
 
 	var user model.User
+	var res response.UserResponse
 	err = json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -74,42 +75,37 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	sqlCekUser := query.SqlQueryCek(utils.Usr)
 	exist := controller.CekUser(user.Email, sqlCekUser)
 
-	if exist.Email != "" {
+	if exist.Email != "" && exist.Email != user.Email {
 
-		user := response.UserResponse{
-			Name:  user.Name,
-			Email: user.Email,
-			NIK:   user.NIK,
-			Message: response.BaseResponse{
-				Status:  http.StatusOK,
-				Message: "Email Telah Digunakan oleh " + exist.Name,
-			},
+		resp := response.BaseResponse{
+			Status:  http.StatusBadRequest,
+			Message: "Email Telah Digunakan",
 		}
-		peopleBytes, _ := json.MarshalIndent(user, "", "\t")
+		data, _ := json.MarshalIndent(resp, "", "\t")
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(peopleBytes)
-
-	} else {
-
-		sqlStatement := `UPDATE users SET name = $1, email = $2, nik = $3, password = $4, updated_at = $5 WHERE id = $6`
-		_, err = utils.DB.Exec(sqlStatement, user.Name, user.Email, user.NIK, utils.HashAndSalt([]byte(user.Password)), time.Now(), id)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			panic(err)
-		}
-		user := response.UserResponse{
-			Name:  user.Name,
-			Email: user.Email,
-			Message: response.BaseResponse{
-				Status:  http.StatusOK,
-				Message: "User Updated!",
-			},
-		}
-		peopleBytes, _ := json.MarshalIndent(user, "", "\t")
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(peopleBytes)
+		w.Write(data)
+		return
 
 	}
+
+	sqlStatement := `UPDATE users SET name = $1, email = $2, nik = $3, password = $4, updated_at = $5 WHERE id = $6`
+	_, err = utils.DB.Exec(sqlStatement, user.Name, user.Email, user.NIK, utils.HashAndSalt([]byte(user.Password)), time.Now(), id)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		panic(err)
+	}
+	res = response.UserResponse{
+		Name:  user.Name,
+		Email: user.Email,
+		Message: response.BaseResponse{
+			Status:  http.StatusOK,
+			Message: "User Updated!",
+		},
+	}
+	peopleBytes, _ := json.MarshalIndent(res, "", "\t")
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(peopleBytes)
+
 }
 
 func LoginUser(w http.ResponseWriter, r *http.Request) {
