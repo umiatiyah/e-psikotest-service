@@ -75,6 +75,10 @@ func CekUser(w http.ResponseWriter, r *http.Request) {
 			Status:  http.StatusOK,
 			Message: "Exists",
 		}
+		data, _ := json.MarshalIndent(res, "", "\t")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(data)
+		return
 	}
 	res = response.BaseResponse{
 		Status:  http.StatusOK,
@@ -244,24 +248,23 @@ func AddValuationNew(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(item)
 	}
 
-	KategoriJawaban := 5
-	Xminimal := JumlahItem * 1
-	Xmaximal := JumlahItem * KategoriJawaban
+	BobotMax := 5
+	BobotMin := 1
+	Xminimal := JumlahItem * BobotMin
+	Xmaximal := JumlahItem * BobotMax
 	Range := Xmaximal - Xminimal
 	Mean := (Xmaximal + Xminimal) / 2
-	SD := Range / (KategoriJawaban + 1)
+	SD := Range / (BobotMax + BobotMin)
 
 	var X int
 	var res string
 	for _, v := range history.Data {
 
-		score := utils.DB.QueryRow("SELECT score FROM answer WHERE id = $1", v.AnswerID).
+		score := utils.DB.QueryRow("SELECT SUM(a.score) FROM history h JOIN answer a ON h.answer_id = a.id WHERE user_id = $1", v.UserID).
 			Scan(&X)
 		if score != nil {
 			log.Fatal(score)
 		}
-		X += X
-
 	}
 
 	s1 := float64(Mean) - (1.5 * float64(SD))
