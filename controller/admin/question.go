@@ -20,7 +20,7 @@ import (
 
 func GetQuestions(w http.ResponseWriter, r *http.Request) {
 
-	rows, err := utils.DB.Query("SELECT q.id, q.category_id, c.value, q.value, q.is_active FROM question q JOIN category c ON q.category_id = c.id ORDER BY q.id asc")
+	rows, err := utils.DB.Query("SELECT q.id, q.category_id, c.value, q.value, q.is_active FROM question q JOIN category c ON q.category_id = c.id ORDER BY c.value asc")
 	if err != nil {
 		log.Fatal(err)
 	}

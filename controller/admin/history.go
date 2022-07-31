@@ -13,7 +13,7 @@ import (
 
 func GetHistory(w http.ResponseWriter, r *http.Request) {
 
-	rows, err := utils.DB.Query("SELECT c.value, q.value, a.value, a.score, u.name, u.nik, h.created_at, h.updated_at FROM history h JOIN category c ON h.category_id = c.id JOIN question q ON h.question_id = q.id JOIN answer a ON h.answer_id = a.id JOIN users u ON h.user_id = u.id ORDER BY h.id asc")
+	rows, err := utils.DB.Query("SELECT c.value, q.value, a.value, a.score, u.name, u.nik, h.created_at, h.updated_at FROM history h JOIN category c ON h.category_id = c.id JOIN question q ON h.question_id = q.id JOIN answer a ON h.answer_id = a.id JOIN users u ON h.user_id = u.id ORDER BY h.created_at desc")
 	if err != nil {
 		log.Fatal(err)
 	}
