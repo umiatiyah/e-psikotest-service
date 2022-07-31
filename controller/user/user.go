@@ -3,7 +3,6 @@ package user
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"main/controller"
 	"main/controller/auth"
@@ -26,17 +25,28 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user response.UserListResponse
+	var user response.UserResponse
 
-	err = utils.DB.QueryRow("SELECT id, name, email, nik FROM users WHERE id = $1", id).Scan(&user.Id, &user.Name, &user.Email, &user.NIK)
+	err = utils.DB.QueryRow("SELECT name, email, nik FROM users WHERE id = $1", id).Scan(&user.Name, &user.Email, &user.NIK)
 	if err != nil {
-		fmt.Print(err)
+		w.Header().Set("Content-Type", "application/json")
+		response.ERROR(w, http.StatusBadRequest, errors.New(http.StatusText(http.StatusBadRequest)))
+		return
+	}
+	user = response.UserResponse{
+		Name:  user.Name,
+		Email: user.Email,
+		NIK:   user.NIK,
+		Message: response.BaseResponse{
+			Status:  http.StatusOK,
+			Message: "Get User Successfully!",
+		},
 	}
 
-	peopleBytes, _ := json.MarshalIndent(user, "", "\t")
+	data, _ := json.MarshalIndent(user, "", "\t")
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(peopleBytes)
+	w.Write(data)
 
 }
 

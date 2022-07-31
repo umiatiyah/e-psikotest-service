@@ -3,7 +3,6 @@ package admin
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"main/controller"
 	"main/controller/auth"
@@ -61,7 +60,9 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 
 	err = utils.DB.QueryRow("SELECT id, name, email, nik FROM users WHERE id = $1", id).Scan(&user.Id, &user.Name, &user.Email, &user.NIK)
 	if err != nil {
-		fmt.Print(err)
+		w.Header().Set("Content-Type", "application/json")
+		response.ERROR(w, http.StatusBadRequest, errors.New(http.StatusText(http.StatusBadRequest)))
+		return
 	}
 
 	peopleBytes, _ := json.MarshalIndent(user, "", "\t")
