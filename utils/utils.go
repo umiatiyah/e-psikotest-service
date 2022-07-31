@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"main/configuration"
-	"main/model"
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
@@ -25,8 +24,12 @@ func HashAndSalt(pwd []byte) string {
 	return string(hash)
 }
 
-func VerifyPassword(hashedPassword, password string) error {
-	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+func VerifyPassword(hashedPassword, password string) (err error) {
+	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	if err != nil {
+		return err
+	}
+	return
 }
 
 func FormatError(err string) error {
@@ -46,16 +49,16 @@ func FormatError(err string) error {
 	return errors.New("Incorrect Details")
 }
 
-func GetAdminName(id int, tbl string) string {
+func GetName(id int, tbl string) string {
 
-	var admin model.Admin
+	var name string
 	sqlQuery := `SELECT name FROM ` + tbl + ` WHERE id = $1`
 
 	row := DB.QueryRow(sqlQuery, id)
-	switch err := row.Scan(&admin.Name); err {
+	switch err := row.Scan(&name); err {
 	case sql.ErrNoRows:
 		fmt.Println("No rows were returned!")
 	}
 
-	return admin.Name
+	return name
 }

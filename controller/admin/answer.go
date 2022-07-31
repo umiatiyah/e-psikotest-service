@@ -113,7 +113,7 @@ func AddAnswer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	adminName := utils.GetAdminName(int(tokenID), utils.Adm)
+	adminName := utils.GetName(int(tokenID), utils.Adm)
 
 	questionID := controller.GetMaterialID(answer.QuestionID, utils.Qst)
 
@@ -184,7 +184,7 @@ func UpdateAnswer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	adminName := utils.GetAdminName(int(tokenID), utils.Adm)
+	adminName := utils.GetName(int(tokenID), utils.Adm)
 
 	questionID := controller.GetMaterialID(answer.QuestionID, utils.Qst)
 

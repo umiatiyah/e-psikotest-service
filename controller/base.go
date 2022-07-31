@@ -38,14 +38,13 @@ func GetUserID(email, sqlQuery string) int {
 	return user.ID
 }
 
-func SignIn(email, password, sqlQuery, role string, id int) (response.Token, error) {
+func SignIn(email, password, sqlQuery, role, name string, id int) (response.Token, error) {
 
 	var err error
 	user := model.BaseUser{}
 
-	row := utils.DB.QueryRow(sqlQuery, email)
-	err = row.Err()
-	if err != nil {
+	row := utils.DB.QueryRow(sqlQuery, email).Scan(&user.Name, &user.Email, &user.Password)
+	if row != nil {
 		return response.Token{
 			Token:  "",
 			Name:   "",
@@ -60,7 +59,7 @@ func SignIn(email, password, sqlQuery, role string, id int) (response.Token, err
 			UserID: 0,
 		}, err
 	}
-	tok, _ := auth.CreateToken(id, role)
+	tok, _ := auth.CreateToken(id, role, name)
 	return tok, nil
 }
 
