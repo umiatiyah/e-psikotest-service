@@ -243,7 +243,8 @@ func LoginAdmin(w http.ResponseWriter, r *http.Request) {
 	sqlGetID := query.SqlGetID(utils.Adm)
 	id := controller.GetUserID(admin.Email, sqlGetID)
 
-	token, err := controller.SignIn(admin.Email, admin.Password, sqlQuery, utils.Adm, id)
+	name := utils.GetName(int(id), utils.Adm)
+	token, err := controller.SignIn(admin.Email, admin.Password, sqlQuery, utils.Adm, name, id)
 	if err != nil {
 		formattedError := utils.FormatError(err.Error())
 		response.ERROR(w, http.StatusUnprocessableEntity, formattedError)

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"main/response"
-	"main/utils"
 	"net/http"
 	"os"
 	"strconv"
@@ -14,7 +13,7 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 )
 
-func CreateToken(id int, role string) (response.Token, error) {
+func CreateToken(id int, role, name string) (response.Token, error) {
 	if id == 0 {
 		return response.Token{
 			Token:  "undefined token",
@@ -29,7 +28,6 @@ func CreateToken(id int, role string) (response.Token, error) {
 	claims["exp"] = time.Now().Add(time.Hour * 1).Unix() //Token expires after 1 hour
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tok, _ := token.SignedString([]byte(os.Getenv("API_SECRET")))
-	name := utils.GetAdminName(int(id), utils.Adm)
 	return response.Token{
 		Token:  tok,
 		Name:   name,

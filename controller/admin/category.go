@@ -108,7 +108,7 @@ func AddCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	adminName := utils.GetAdminName(int(tokenID), utils.Adm)
+	adminName := utils.GetName(int(tokenID), utils.Adm)
 
 	sqlStatement := `INSERT INTO category (value, min_score, duration, limit_question, created_at, updated_at, created_by, updated_by ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
 	_, err = utils.DB.Exec(sqlStatement, category.Name, category.MinScore, category.Duration, category.LimitQuestion, time.Now(), time.Now(), adminName, adminName)
@@ -166,7 +166,7 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	adminName := utils.GetAdminName(int(tokenID), utils.Adm)
+	adminName := utils.GetName(int(tokenID), utils.Adm)
 
 	sqlStatement := `UPDATE category SET value = $1, min_score = $2, duration = $3, limit_question = $4, updated_at = $5, updated_by = $6 WHERE id = $7`
 	_, err = utils.DB.Exec(sqlStatement, category.Name, category.MinScore, category.Duration, category.LimitQuestion, time.Now(), adminName, id)

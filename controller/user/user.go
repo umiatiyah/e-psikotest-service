@@ -125,7 +125,8 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 	sqlGetID := query.SqlGetID(utils.Usr)
 	id := controller.GetUserID(user.Email, sqlGetID)
 
-	token, err := controller.SignIn(user.Email, user.Password, sqlQuery, utils.Usr, id)
+	name := utils.GetName(int(id), utils.Usr)
+	token, err := controller.SignIn(user.Email, user.Password, sqlQuery, utils.Usr, name, id)
 	if err != nil {
 		formattedError := utils.FormatError(err.Error())
 		response.ERROR(w, http.StatusUnprocessableEntity, formattedError)

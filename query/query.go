@@ -1,7 +1,7 @@
 package query
 
 func SqlQueryCek(tbl string) string {
-	return `SELECT name, email FROM ` + tbl + ` WHERE email = $1`
+	return `SELECT name, email, password FROM ` + tbl + ` WHERE email = $1`
 }
 
 func SqlGetID(tbl string) string {
