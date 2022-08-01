@@ -167,28 +167,37 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		peopleBytes, _ := json.MarshalIndent(user, "", "\t")
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(peopleBytes)
-
-	} else {
-
-		sqlStatement := `UPDATE users SET name = $1, email = $2, nik = $3, password = $4, updated_at = $5 WHERE id = $6`
-		_, err = utils.DB.Exec(sqlStatement, user.Name, user.Email, user.NIK, utils.HashAndSalt([]byte(user.Password)), time.Now(), id)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			panic(err)
-		}
-		user := response.UserResponse{
-			Name:  user.Name,
-			Email: user.Email,
-			Message: response.BaseResponse{
-				Status:  http.StatusOK,
-				Message: "User Updated!",
-			},
-		}
-		peopleBytes, _ := json.MarshalIndent(user, "", "\t")
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(peopleBytes)
+		return
 
 	}
+
+	sqlGetCurrentPassword := query.SqlGetCurrentPassword(utils.Usr)
+	currentPassword := controller.SqlGetCurrentPassword(sqlGetCurrentPassword, id)
+
+	if user.Password == "" {
+		user.Password = currentPassword
+	} else {
+		user.Password = utils.HashAndSalt([]byte(user.Password))
+	}
+
+	sqlStatement := `UPDATE users SET name = $1, email = $2, nik = $3, password = $4, updated_at = $5 WHERE id = $6`
+	_, err = utils.DB.Exec(sqlStatement, user.Name, user.Email, user.NIK, user.Password, time.Now(), id)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		panic(err)
+	}
+	res := response.UserResponse{
+		Name:  user.Name,
+		Email: user.Email,
+		Message: response.BaseResponse{
+			Status:  http.StatusOK,
+			Message: "User Updated!",
+		},
+	}
+	data, _ := json.MarshalIndent(res, "", "\t")
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(data)
+
 }
 
 func DeleteUser(w http.ResponseWriter, r *http.Request) {

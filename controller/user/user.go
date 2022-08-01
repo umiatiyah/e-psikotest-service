@@ -88,8 +88,17 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	}
 
+	sqlGetCurrentPassword := query.SqlGetCurrentPassword(utils.Usr)
+	currentPassword := controller.SqlGetCurrentPassword(sqlGetCurrentPassword, id)
+
+	if user.Password == "" {
+		user.Password = currentPassword
+	} else {
+		user.Password = utils.HashAndSalt([]byte(user.Password))
+	}
+
 	sqlStatement := `UPDATE users SET name = $1, email = $2, nik = $3, password = $4, updated_at = $5 WHERE id = $6`
-	_, err = utils.DB.Exec(sqlStatement, user.Name, user.Email, user.NIK, utils.HashAndSalt([]byte(user.Password)), time.Now(), id)
+	_, err = utils.DB.Exec(sqlStatement, user.Name, user.Email, user.NIK, user.Password, time.Now(), id)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		panic(err)
