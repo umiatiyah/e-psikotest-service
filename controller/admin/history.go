@@ -3,6 +3,7 @@ package admin
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"main/controller/auth"
 	"main/response"
@@ -84,7 +85,12 @@ func GetResult(w http.ResponseWriter, r *http.Request) {
 
 func GetValuation(w http.ResponseWriter, r *http.Request) {
 
-	rows, err := utils.DB.Query("SELECT u.name, u.nik, c.value, (SUM(a.score)) as bobot FROM history h JOIN category c ON h.category_id = c.id JOIN answer a ON h.answer_id = a.id JOIN users u ON h.user_id = u.id GROUP BY u.name, u.nik, c.value ORDER BY bobot DESC")
+	rows, err := utils.DB.Query("SELECT u.name, u.nik, c.value, (SUM(a.score)) as bobot FROM history h JOIN category c ON h.category_id = c.id JOIN answer a ON h.answer_id = a.id JOIN users u ON h.user_id = u.id GROUP BY u.name, u.nik, c.value, date(h.created_at) ORDER BY date(h.created_at) desc")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	totalScore, err := utils.DB.Query("SELECT (SUM(a.score)) as bobot FROM history h JOIN category c ON h.category_id = c.id JOIN answer a ON h.answer_id = a.id JOIN users u ON h.user_id = u.id GROUP BY u.name, u.nik, c.value ORDER BY bobot DESC")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -97,11 +103,22 @@ func GetValuation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var valuations []response.ValuationResponse
+	var totalJumlahNilaiPerkategori, jumlahNilaiPerkategori int
+
+	for totalScore.Next() {
+		var i int
+		totalScore.Scan(&i)
+		totalJumlahNilaiPerkategori += i
+	}
 
 	for rows.Next() {
 		var valuation response.ValuationResponse
 		rows.Scan(&valuation.User, &valuation.NIKUser, &valuation.CategoryValue, &valuation.TotalScore)
+		jumlahNilaiPerkategori = valuation.TotalScore
+		u := (float64(jumlahNilaiPerkategori)) / (float64(totalJumlahNilaiPerkategori)) * 100
 
+		s := fmt.Sprintf("%.2f", u)
+		valuation.PersenBobotCategory = s
 		valuations = append(valuations, valuation)
 	}
 
