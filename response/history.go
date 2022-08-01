@@ -12,10 +12,11 @@ type HistoryResponse struct {
 }
 
 type ValuationResponse struct {
-	User          string `json:"user"`
-	NIKUser       string `json:"nik_user"`
-	CategoryValue string `json:"category_value"`
-	TotalScore    int    `json:"total_score"`
+	User                string `json:"user"`
+	NIKUser             string `json:"nik_user"`
+	CategoryValue       string `json:"category_value"`
+	TotalScore          int    `json:"total_score"`
+	PersenBobotCategory string `json:"persen_bobot_category"`
 }
 
 type ResultResponse struct {
