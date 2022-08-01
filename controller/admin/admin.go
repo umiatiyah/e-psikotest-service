@@ -258,6 +258,11 @@ func LoginAdmin(w http.ResponseWriter, r *http.Request) {
 		response.ERROR(w, http.StatusUnprocessableEntity, formattedError)
 		return
 	}
+	if token.Token == "" {
+		w.Header().Set("Content-Type", "application/json")
+		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	response.JSON(w, http.StatusOK, token)
 }
