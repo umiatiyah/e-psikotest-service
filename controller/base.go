@@ -118,3 +118,16 @@ func GetQuestionIDFromAnswer(id int) int {
 
 	return idMaterial.ID
 }
+
+func SqlGetCurrentPassword(sqlQuery string, id uint64) string {
+
+	var currentPassword string
+
+	row := utils.DB.QueryRow(sqlQuery, id)
+	switch err := row.Scan(&currentPassword); err {
+	case sql.ErrNoRows:
+		fmt.Println("No rows were returned!")
+	}
+
+	return currentPassword
+}

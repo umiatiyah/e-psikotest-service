@@ -27,3 +27,7 @@ func SqlGetCategoryIDFromQuestion() string {
 func SqlGetQuestionIDFromAnswer() string {
 	return `SELECT question_id FROM answer WHERE id = $1`
 }
+
+func SqlGetCurrentPassword(tbl string) string {
+	return `SELECT password FROM ` + tbl + ` WHERE id = $1`
+}

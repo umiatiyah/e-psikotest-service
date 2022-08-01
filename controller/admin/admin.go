@@ -171,28 +171,36 @@ func UpdateAdmin(w http.ResponseWriter, r *http.Request) {
 		peopleBytes, _ := json.MarshalIndent(userAdmin, "", "\t")
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(peopleBytes)
-
-	} else {
-
-		sqlStatement := `UPDATE admin SET name = $1, email = $2, password = $3, updated_at = $4 WHERE id = $5`
-		_, err = utils.DB.Exec(sqlStatement, admin.Name, admin.Email, utils.HashAndSalt([]byte(admin.Password)), time.Now(), id)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			panic(err)
-		}
-		userAdmin := response.AdminResponse{
-			Name:  admin.Name,
-			Email: admin.Email,
-			Message: response.BaseResponse{
-				Status:  http.StatusOK,
-				Message: "Admin Updated!",
-			},
-		}
-		peopleBytes, _ := json.MarshalIndent(userAdmin, "", "\t")
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(peopleBytes)
+		return
 
 	}
+	sqlGetCurrentPassword := query.SqlGetCurrentPassword(utils.Adm)
+	currentPassword := controller.SqlGetCurrentPassword(sqlGetCurrentPassword, id)
+
+	if admin.Password == "" {
+		admin.Password = currentPassword
+	} else {
+		admin.Password = utils.HashAndSalt([]byte(admin.Password))
+	}
+
+	sqlStatement := `UPDATE admin SET name = $1, email = $2, password = $3, updated_at = $4 WHERE id = $5`
+	_, err = utils.DB.Exec(sqlStatement, admin.Name, admin.Email, admin.Password, time.Now(), id)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		panic(err)
+	}
+	userAdmin := response.AdminResponse{
+		Name:  admin.Name,
+		Email: admin.Email,
+		Message: response.BaseResponse{
+			Status:  http.StatusOK,
+			Message: "Admin Updated!",
+		},
+	}
+	peopleBytes, _ := json.MarshalIndent(userAdmin, "", "\t")
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(peopleBytes)
+
 }
 
 func DeleteAdmin(w http.ResponseWriter, r *http.Request) {
