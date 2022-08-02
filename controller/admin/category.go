@@ -50,6 +50,36 @@ func GetCategories(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 }
 
+func GetBobotCategories(w http.ResponseWriter, r *http.Request) {
+
+	rows, err := utils.DB.Query("select c.id, c.value, count(a.*) as bobot FROM answer a JOIN question q ON a.question_id = q.id JOIN category c ON q.category_id = c.id group by c.id order by c.id")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, role, err := auth.ExtractTokenID(r)
+	if err != nil || role != utils.Adm {
+		w.Header().Set("Content-Type", "application/json")
+		response.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
+		return
+	}
+
+	var categories []response.CategoryListResponse
+
+	for rows.Next() {
+		var category response.CategoryListResponse
+		rows.Scan(&category.ID, &category.Name, &category.Bobot)
+		categories = append(categories, category)
+	}
+
+	data, _ := json.MarshalIndent(categories, "", "\t")
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(data)
+
+	defer rows.Close()
+}
+
 func GetCategory(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, err := strconv.ParseUint(vars["id"], 10, 32)
