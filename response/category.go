@@ -7,3 +7,9 @@ type CategoryResponse struct {
 	LimitQuestion int    `json:"limit_question"`
 	Message       BaseResponse
 }
+
+type CategoryListResponse struct {
+	ID    int    `json:"id"`
+	Name  string `json:"value"`
+	Bobot int    `json:"bobot"`
+}
