@@ -31,3 +31,23 @@ func SqlGetQuestionIDFromAnswer() string {
 func SqlGetCurrentPassword(tbl string) string {
 	return `SELECT password FROM ` + tbl + ` WHERE id = $1`
 }
+
+func SqlCreateTempTblBobot() string {
+	return `drop table if exists tempBobot;
+			CREATE TABLE tempBobot
+			( userid int, category varchar (100), score int)
+			;
+			WITH BOBOT_CTE (userid, category, score)
+			AS  
+			(
+			SELECT u.id, c.value, (SUM(a.score)) as bobot FROM history h JOIN category c ON h.category_id = c.id JOIN answer a ON h.answer_id = a.id JOIN users u ON h.user_id = u.id GROUP BY u.id, c.value ORDER BY bobot desc 
+			)  
+			insert into tempBobot
+			SELECT *
+			FROM BOBOT_CTE;`
+}
+
+func SqlGetMaxBobotCategory() string {
+	return `select max(score) from tempBobot
+			where category = $1`
+}

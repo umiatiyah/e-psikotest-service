@@ -131,3 +131,20 @@ func SqlGetCurrentPassword(sqlQuery string, id uint64) string {
 
 	return currentPassword
 }
+
+func SqlCreateTempTblBobot(sqlQuery string) {
+	utils.DB.QueryRow(sqlQuery)
+}
+
+func SqlGetMaxBobotCategory(sqlQuery string, category string) int {
+
+	var maxBobot int
+
+	row := utils.DB.QueryRow(sqlQuery, category)
+	switch err := row.Scan(&maxBobot); err {
+	case sql.ErrNoRows:
+		fmt.Println("No rows were returned!")
+	}
+
+	return maxBobot
+}
