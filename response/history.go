@@ -23,7 +23,7 @@ type ResultResponse struct {
 	UserID     int    `json:"user_id"`
 	User       string `json:"user"`
 	NIKUser    string `json:"nik_user"`
-	TotalScore int    `json:"total_score"`
+	TotalScore string `json:"total_score"`
 	Result     string `json:"result"`
 	CreatedAt  string `json:"created_at"`
 	UpdatedAt  string `json:"updated_at"`
